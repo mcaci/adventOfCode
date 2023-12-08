@@ -101,9 +101,9 @@ func FourOfAKindWithJoker(h hand) bool {
 	case 0:
 		return FourOfAKind(h)
 	case 1:
-		return FourOfAKind(h) || ThreeOfAKind(h)
+		return ThreeOfAKind(h)
 	case 2:
-		return ThreeOfAKind(h) || TwoPair(h) || FullHouse(h)
+		return TwoPair(h)
 	default:
 		return true
 	}
@@ -111,10 +111,10 @@ func FourOfAKindWithJoker(h hand) bool {
 func FullHouseWithJoker(h hand) bool {
 	c := cardCount(h)
 	switch c['J'] {
-	case 0, 3:
+	case 0:
 		return FullHouse(h)
 	case 1:
-		return ThreeOfAKind(h)
+		return ThreeOfAKind(h) || TwoPair(h)
 	case 2:
 		return FullHouse(h) || TwoPair(h)
 	default:
@@ -127,7 +127,7 @@ func ThreeOfAKindWithJoker(h hand) bool {
 	case 0:
 		return ThreeOfAKind(h)
 	case 1:
-		return OnePair(h) || TwoPair(h)
+		return OnePair(h)
 	default:
 		return true
 	}
@@ -135,7 +135,7 @@ func ThreeOfAKindWithJoker(h hand) bool {
 func TwoPairWithJoker(h hand) bool {
 	c := cardCount(h)
 	switch c['J'] {
-	case 0, 2:
+	case 0:
 		return TwoPair(h)
 	case 1:
 		return OnePair(h)
@@ -154,6 +154,7 @@ func OnePairWithJoker(h hand) bool {
 }
 
 func Less(h1, h2 hand) bool {
+	// fs := []func(hand) bool{FiveOfAKind, FourOfAKind, FullHouse, ThreeOfAKind, TwoPair, OnePair, HighCard}
 	fs := []func(hand) bool{FiveOfAKindWithJoker, FourOfAKindWithJoker, FullHouseWithJoker, ThreeOfAKindWithJoker, TwoPairWithJoker, OnePairWithJoker, HighCard}
 	// cardOrder := []byte{'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'}
 	cardOrder := []byte{'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J'}
@@ -208,5 +209,5 @@ func main() {
 	}
 	// Part 1:  241344943
 	// Part 2:  243101568
-	log.Print(sum)
+	log.Print(sum, 243101568)
 }
