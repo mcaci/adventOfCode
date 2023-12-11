@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"sort"
 	"strings"
 
 	"github.com/mcaci/graphgo/graph"
@@ -31,114 +32,100 @@ func main() {
 		j++
 	}
 	vs := g.Vertices()
+	var startNode *graph.Vertex[pipe]
 	for _, v := range vs {
 		var s, e *graph.Vertex[pipe]
 		switch v.E.dir {
 		case start:
+			startNode = v
 			continue
 		case horizontal:
 			for _, w := range vs {
-				if v.E.x == w.E.x+1 && v.E.y == w.E.y {
+				if v.E.x == w.E.x+1 && v.E.y == w.E.y && (w.E.dir == start || w.E.dir == horizontal || w.E.dir == southPlusEast || w.E.dir == northPlusEast) {
 					s = w
 					continue
 				}
-				if v.E.x == w.E.x-1 && v.E.y == w.E.y {
+				if v.E.x == w.E.x-1 && v.E.y == w.E.y && (w.E.dir == start || w.E.dir == horizontal || w.E.dir == southPlusWest || w.E.dir == northPlusWest) {
 					e = w
 					continue
 				}
 			}
 		case vertical:
 			for _, w := range vs {
-				if v.E.y == w.E.y+1 && v.E.x == w.E.x {
+				if v.E.y == w.E.y+1 && v.E.x == w.E.x && (w.E.dir == start || w.E.dir == vertical || w.E.dir == southPlusWest || w.E.dir == southPlusEast) {
 					s = w
 					continue
 				}
-				if v.E.y == w.E.y-1 && v.E.x == w.E.x {
+				if v.E.y == w.E.y-1 && v.E.x == w.E.x && (w.E.dir == start || w.E.dir == vertical || w.E.dir == northPlusWest || w.E.dir == northPlusEast) {
 					e = w
 					continue
 				}
 			}
 		case northPlusEast:
 			for _, w := range vs {
-				if v.E.x == w.E.x-1 && v.E.y == w.E.y {
+				if v.E.x == w.E.x-1 && v.E.y == w.E.y && (w.E.dir == start || w.E.dir == horizontal || w.E.dir == southPlusWest || w.E.dir == northPlusWest) {
 					s = w
 					continue
 				}
-				if v.E.x == w.E.x && v.E.y == w.E.y+1 {
+				if v.E.x == w.E.x && v.E.y == w.E.y+1 && (w.E.dir == start || w.E.dir == vertical || w.E.dir == southPlusWest || w.E.dir == southPlusEast) {
 					e = w
 					continue
 				}
 			}
 		case northPlusWest:
 			for _, w := range vs {
-				if v.E.x == w.E.x+1 && v.E.y == w.E.y {
+				if v.E.x == w.E.x+1 && v.E.y == w.E.y && (w.E.dir == start || w.E.dir == horizontal || w.E.dir == southPlusEast || w.E.dir == northPlusEast) {
 					s = w
 					continue
 				}
-				if v.E.x == w.E.x && v.E.y == w.E.y+1 {
+				if v.E.x == w.E.x && v.E.y == w.E.y+1 && (w.E.dir == start || w.E.dir == vertical || w.E.dir == southPlusWest || w.E.dir == southPlusEast) {
 					e = w
 					continue
 				}
 			}
 		case southPlusEast:
 			for _, w := range vs {
-				if v.E.x == w.E.x-1 && v.E.y == w.E.y {
+				if v.E.x == w.E.x-1 && v.E.y == w.E.y && (w.E.dir == start || w.E.dir == horizontal || w.E.dir == southPlusWest || w.E.dir == northPlusWest) {
 					s = w
 					continue
 				}
-				if v.E.x == w.E.x && v.E.y == w.E.y-1 {
+				if v.E.x == w.E.x && v.E.y == w.E.y-1 && (w.E.dir == start || w.E.dir == vertical || w.E.dir == northPlusWest || w.E.dir == northPlusEast) {
 					e = w
 					continue
 				}
 			}
 		case southPlusWest:
 			for _, w := range vs {
-				if v.E.x == w.E.x+1 && v.E.y == w.E.y {
+				if v.E.x == w.E.x+1 && v.E.y == w.E.y && (w.E.dir == start || w.E.dir == horizontal || w.E.dir == southPlusEast || w.E.dir == northPlusEast) {
 					s = w
 					continue
 				}
-				if v.E.x == w.E.x && v.E.y == w.E.y-1 {
+				if v.E.x == w.E.x && v.E.y == w.E.y-1 && (w.E.dir == start || w.E.dir == vertical || w.E.dir == northPlusWest || w.E.dir == northPlusEast) {
 					e = w
 					continue
 				}
 			}
 		default:
-			log.Fatal("nope")
+			log.Fatal(string(v.E.dir), " nope")
 		}
 		if s != nil && e != nil {
 			addEdges(g, v, s, e)
 		}
 	}
-	log.Print(run(g))
-}
-
-func run(g graph.Graph[pipe]) int {
-	es := g.Edges()
-	for i := range es {
-		log.Print(es[i])
+	d := path.BellmanFordDist(g, startNode)
+	var keys []*graph.Vertex[pipe]
+	for k := range d {
+		keys = append(keys, k)
 	}
-	vs := g.Vertices()
-	var s *graph.Vertex[pipe]
-	for i := range vs {
-		if vs[i].E.dir != start {
-			continue
+	sort.Slice(keys, func(i, j int) bool {
+		return d[keys[i]].Dist() < d[keys[j]].Dist()
+	})
+	for _, k := range keys {
+		if d[k].Dist() >= math.MaxInt {
+			break
 		}
-		s = vs[i]
-		break
+		log.Print(k, d[k])
 	}
-	m := path.BellmanFordDist[pipe](g, s)
-	var maxDist int
-	for _, d := range m {
-		if d.Dist() == math.MaxInt {
-			continue
-		}
-		log.Print(d)
-		if d.Dist() < maxDist {
-			continue
-		}
-		maxDist = d.Dist()
-	}
-	return maxDist
 }
 
 type pipe struct {
