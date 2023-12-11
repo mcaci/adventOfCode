@@ -5,12 +5,14 @@ import (
 	_ "embed"
 	"fmt"
 	"log"
+	"math"
 	"strings"
 
 	"github.com/mcaci/graphgo/graph"
+	"github.com/mcaci/graphgo/path"
 )
 
-//go:embed sample1
+//go:embed input
 var input string
 
 func main() {
@@ -29,9 +31,8 @@ func main() {
 		j++
 	}
 	vs := g.Vertices()
-	for i, v := range vs {
+	for _, v := range vs {
 		var s, e *graph.Vertex[pipe]
-		log.Print(v)
 		switch v.E.dir {
 		case start:
 			continue
@@ -45,13 +46,9 @@ func main() {
 					e = w
 					continue
 				}
-
 			}
 		case vertical:
-			for j, w := range vs {
-				if i == j {
-					continue
-				}
+			for _, w := range vs {
 				if v.E.y == w.E.y+1 && v.E.x == w.E.x {
 					s = w
 					continue
@@ -60,27 +57,88 @@ func main() {
 					e = w
 					continue
 				}
-				if s != nil && e != nil {
-					log.Print("adding", v)
-					addEdges(g, v, s, e)
-					break
-				}
 			}
 		case northPlusEast:
+			for _, w := range vs {
+				if v.E.x == w.E.x-1 && v.E.y == w.E.y {
+					s = w
+					continue
+				}
+				if v.E.x == w.E.x && v.E.y == w.E.y+1 {
+					e = w
+					continue
+				}
+			}
 		case northPlusWest:
+			for _, w := range vs {
+				if v.E.x == w.E.x+1 && v.E.y == w.E.y {
+					s = w
+					continue
+				}
+				if v.E.x == w.E.x && v.E.y == w.E.y+1 {
+					e = w
+					continue
+				}
+			}
 		case southPlusEast:
+			for _, w := range vs {
+				if v.E.x == w.E.x-1 && v.E.y == w.E.y {
+					s = w
+					continue
+				}
+				if v.E.x == w.E.x && v.E.y == w.E.y-1 {
+					e = w
+					continue
+				}
+			}
 		case southPlusWest:
+			for _, w := range vs {
+				if v.E.x == w.E.x+1 && v.E.y == w.E.y {
+					s = w
+					continue
+				}
+				if v.E.x == w.E.x && v.E.y == w.E.y-1 {
+					e = w
+					continue
+				}
+			}
+		default:
+			log.Fatal("nope")
 		}
 		if s != nil && e != nil {
-			log.Print("adding", v)
 			addEdges(g, v, s, e)
 		}
 	}
-	log.Print(g, run())
+	log.Print(run(g))
 }
 
-func run() int {
-	return 0
+func run(g graph.Graph[pipe]) int {
+	es := g.Edges()
+	for i := range es {
+		log.Print(es[i])
+	}
+	vs := g.Vertices()
+	var s *graph.Vertex[pipe]
+	for i := range vs {
+		if vs[i].E.dir != start {
+			continue
+		}
+		s = vs[i]
+		break
+	}
+	m := path.BellmanFordDist[pipe](g, s)
+	var maxDist int
+	for _, d := range m {
+		if d.Dist() == math.MaxInt {
+			continue
+		}
+		log.Print(d)
+		if d.Dist() < maxDist {
+			continue
+		}
+		maxDist = d.Dist()
+	}
+	return maxDist
 }
 
 type pipe struct {
@@ -105,11 +163,11 @@ const (
 )
 
 func addEdges(g graph.Graph[pipe], v, s, e *graph.Vertex[pipe]) {
-	sE := &graph.Edge[pipe]{X: v, Y: s}
+	sE := &graph.Edge[pipe]{X: v, Y: s, P: graph.EdgeProperty{W: 1}}
 	if !g.ContainsEdge(sE) {
 		g.AddEdge(sE)
 	}
-	eE := &graph.Edge[pipe]{X: v, Y: e}
+	eE := &graph.Edge[pipe]{X: v, Y: e, P: graph.EdgeProperty{W: 1}}
 	if !g.ContainsEdge(eE) {
 		g.AddEdge(eE)
 	}
