@@ -26,15 +26,13 @@ func main() {
 
 	var sum int
 	for i := range recs {
+		// log.Print(i)
 		br := brokenBlocks(recs[i])
 		seq := sequence(recs[i])
 		r := replacements(recs[i])
 		for j := range r {
 			rep := replace(seq, r[j])
 			ok := valid(rep, br)
-			if ok {
-				log.Print(string(r[j]))
-			}
 			if !ok {
 				continue
 			}
@@ -90,7 +88,6 @@ func replacements(r record) [][]byte {
 		}, []byte(n))
 
 	}
-	fmt.Println(recs)
 	return recs
 }
 
@@ -128,9 +125,5 @@ func valid(seq []byte, broken []int) bool {
 	if err != nil {
 		log.Panic("nope")
 	}
-	ok := r.Match(seq)
-	if ok {
-		log.Print(string(seq), " ooo ", rex, " ooo ", ok)
-	}
-	return ok
+	return r.Match(seq)
 }
