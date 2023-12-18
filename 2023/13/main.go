@@ -2,8 +2,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	_ "embed"
-	"fmt"
 	"log"
 	"strings"
 )
@@ -19,8 +19,9 @@ func main() {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if len(line) == 0 {
-			score += mirrorScore(f, 100)
-			score += mirrorScore(transpose(f), 1)
+			hScore := mirrorScore(f) * 100
+			vScore := mirrorScore(transpose(f))
+			score += hScore + vScore
 			f = nil
 			continue
 		}
@@ -44,28 +45,30 @@ func transpose(f field) field {
 	return o
 }
 
-func mirrorScore(f field, tFactor int) int {
-	j := len(f) - 1
-	for i := 0; i < len(f); i++ {
-		if string(f[i]) != string(f[j]) {
+func mirrorScore(f field) int {
+	var score int
+	var possibleMatchingRows []int
+	for i := range f {
+		if i == 0 {
 			continue
 		}
-		if j-i == 1 {
-			fmt.Println(i, j, tFactor, string(f[i]), string(f[j]))
-			return j * tFactor
-		}
-		j--
-	}
-	j = 0
-	for i := len(f) - 1; i >= 0; i-- {
-		if string(f[i]) != string(f[j]) {
+		if !bytes.Equal(f[i], f[i-1]) {
 			continue
 		}
-		if i-j == 1 {
-			fmt.Println(i, j, tFactor, string(f[i]), string(f[j]))
-			return i * tFactor
-		}
-		j++
+		possibleMatchingRows = append(possibleMatchingRows, i)
 	}
-	return 0
+nextRow:
+	for _, i := range possibleMatchingRows {
+		for j := 0; ; j++ {
+			l, r := i-(j+1), i+j
+			if l < 0 || r >= len(f) {
+				break
+			}
+			if !bytes.Equal(f[l], f[r]) {
+				continue nextRow
+			}
+		}
+		return i
+	}
+	return score
 }
