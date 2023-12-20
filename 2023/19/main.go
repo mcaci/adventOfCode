@@ -4,6 +4,8 @@ import (
 	"bufio"
 	_ "embed"
 	"log"
+	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -99,9 +101,22 @@ func main() {
 			w.s = steps
 			flows = append(flows, w)
 		}
+
 	}
-	log.Print(parts)
-	log.Print(flows)
+	slices.SortFunc(flows, func(a, b workflow) int { return strings.Compare(a.n, b.n) })
+	var accepted []machinePart
+	for i := range parts {
+		if !isAccepted(parts[i], flows) {
+			continue
+		}
+		accepted = append(accepted, parts[i])
+	}
+	var ratingAccepted int
+	for _, p := range accepted {
+		ratingAccepted += p.x + p.m + p.a + p.s
+	}
+	log.Print(ratingAccepted)
+	acceptedValues(flows)
 }
 
 type machinePart struct{ x, m, a, s int }
@@ -115,3 +130,38 @@ type step struct {
 }
 
 func always(machinePart) bool { return true }
+
+func isAccepted(mp machinePart, flows []workflow) bool {
+	i, ok := sort.Find(len(flows), func(i int) int { return strings.Compare("in", flows[i].n) })
+	if !ok {
+		return false
+	}
+	current := flows[i]
+nextFlow:
+	for {
+		for _, s := range current.s {
+			if !s.cond(mp) {
+				continue
+			}
+			switch s.next {
+			case "A":
+				return true
+			case "R":
+				return false
+			default:
+				i, ok = sort.Find(len(flows), func(i int) int { return strings.Compare(s.next, flows[i].n) })
+				if !ok {
+					return false
+				}
+				current = flows[i]
+				continue nextFlow
+			}
+		}
+		return false
+	}
+}
+
+func acceptedValues(flows []workflow) [4][4000]bool {
+	var accepted [4][4000]bool
+	return accepted
+}
