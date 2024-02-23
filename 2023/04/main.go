@@ -69,27 +69,30 @@ func main() {
 	}
 	fmt.Println(sum)
 	l, r := 10, 10
-	img := myimage.NewRGBA(l, r, func(img *image.RGBA) {
-		for i := 0; i < l*r; i++ {
-			x, y := i/l, i%r
-			switch {
-			case slices.Contains(games[0].numbers, i) && slices.Contains(games[0].winners, i):
-				img.Set(x, y, color.RGBA{B: 0, R: 0, G: 100, A: 255})
-			case slices.Contains(games[0].winners, i):
-				img.Set(x, y, color.RGBA{B: 0, R: 100, G: 0, A: 255})
-			case slices.Contains(games[0].numbers, i):
-				img.Set(x, y, color.RGBA{B: 0, R: 0, G: 0, A: 255})
-			default:
-				img.Set(x, y, color.RGBA{B: 150, R: 150, G: 150, A: 255})
+	img := myimage.NewImage(l, r,
+		func(img *image.RGBA) *image.RGBA {
+			for i := 0; i < l*r; i++ {
+				x, y := i/l, i%r
+				switch {
+				case slices.Contains(games[0].numbers, i) && slices.Contains(games[0].winners, i):
+					img.Set(x, y, color.RGBA{B: 0, R: 0, G: 100, A: 255})
+				case slices.Contains(games[0].winners, i):
+					img.Set(x, y, color.RGBA{B: 0, R: 100, G: 0, A: 255})
+				case slices.Contains(games[0].numbers, i):
+					img.Set(x, y, color.RGBA{B: 0, R: 0, G: 0, A: 255})
+				default:
+					img.Set(x, y, color.RGBA{B: 150, R: 150, G: 150, A: 255})
+				}
 			}
-		}
-	})
-	myimage.Save(img, "card1.png", 50)
+			return img
+		})
+	img = myimage.ScaleImage(img, 50)
+	myimage.SaveImg("card1.png", img)
 	var frames []*image.Paletted
 	for i, g := range games {
 		log.Print(i)
 		l, r := 10, 10
-		img := myimage.NewPaletted(l, r, func(img *image.Paletted) {
+		img := myimage.NewGifFrame(l, r, func(img *image.Paletted) *image.Paletted {
 			for i := 0; i < l*r; i++ {
 				x, y := i/l, i%r
 				switch {
@@ -103,10 +106,12 @@ func main() {
 					img.Set(x, y, color.RGBA{B: 150, R: 150, G: 150, A: 255})
 				}
 			}
-		}, 50)
+			return img
+		})
+		img = myimage.ScaleGifFrame(img, 50)
 		frames = append(frames, img)
 	}
-	myimage.SaveGIF(frames, "cards.gif", 50, 75)
+	myimage.SaveGIF("cards.gif", myimage.NewGif(frames, 50))
 
 	// part 2
 	for i, g := range games {
